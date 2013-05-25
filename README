@@ -1,0 +1,107 @@
+NAME
+    CGI::Application::Plugin::Header - Plugin for handling header props.
+
+SYNOPSIS
+      package MyApp;
+      use parent 'CGI::Application';
+      use CGI::Application::Plugin::Header;
+
+      sub do_something {
+          my $self = shift;
+
+          my $header = $self->header; # => CGI::Header object
+
+          # get header props.
+          my $type = $header->type; # => "text/plain"
+
+          # set header props.
+          $header->type("text/html");
+
+          # compatible with the core methods of CGI::Application
+          $self->header_props( type => "text/plain" );
+          $self->header_add( type => "text/plain" );
+
+          ...
+      }
+
+DESCRIPTION
+    This plugin provides you the common syntax to handle CGI.pm-compatible
+    HTTP header properties.
+
+    By using this plugin, your application is capable of the following
+    methods, where $cgiapp denotes the instance of your application which
+    inherits from CGI::Application:
+
+  ATTRIBUTES
+    $header = $cgiapp->header
+        Returns a CGI::Header object associated with $cgiapp. You can use
+        all methods of $header.
+
+          sub cgiapp_postrun {
+              my ( $self, $body_ref ) = @_;
+              $self->header->set( 'Content-Length' => length $$body_ref );
+          }
+
+        You can also define your "header" class which inherits from
+        "CGI::Header". For example,
+
+          use My::CGI::Header;
+          my $app = MyApp->new( header => My::CGI::Header->new );
+          $app->header->cookies({ name => 'ID', value => 123456 });
+
+        where "My::CGI::Header" is defined as follows:
+
+          package My::CGI::Header;
+          use parent 'CGI::Header';
+          use CGI::Cookie;
+
+          sub cookies {
+              my $self    = shift;
+              my $cookies = $self->header->{cookies} ||= [];
+
+              return $cookies unless @_;
+
+              if ( ref $_[0] eq 'HASH' ) {
+                  push @$cookies, map { CGI::Cookie->new($_) } @_;
+              }
+              else {
+                  push @$cookies, CGI::Cookie->new( @_ );
+              }
+
+              $self;
+          }
+
+  METHODS
+    This plugin overrides the following methods of CGI::Application:
+
+    $cgiapp->header_props
+        Behaves like CGI::Application's "header_props" method.
+
+    $cgiapp->header_add
+        Behaves like CGI::Application's "header_add" method.
+
+   INCOMPATIBILITY
+    Header property names are normalized by $header automatically, and so
+    this plugin breaks your code which depends on the return value of
+    "header_props":
+
+      my %header_props = $cgiapp->header_props; # => ( -cookies => 'ID=123456' )
+
+      if ( exists $header_props{-cookie} ) {
+          ...
+      }
+
+    Those codes can be rewritten using $header as well as "header_props" or
+    "header_add":
+
+      if ( $cgiapp->header->exists('-cookie') ) {
+          ...
+      }
+
+AUTHOR
+    Ryo Anazawa (anazawa@cpan.org)
+
+LICENSE
+    This module is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself. See perlartistic.
+
