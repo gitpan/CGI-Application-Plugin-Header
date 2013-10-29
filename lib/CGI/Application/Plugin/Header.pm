@@ -6,13 +6,13 @@ use parent 'Exporter';
 use CGI::Header;
 use Carp qw/carp croak/;
 
-our $VERSION = '0.63001';
+our $VERSION = '0.63002';
 our @EXPORT  = qw( header header_add header_props );
 
 sub import {
     my ( $class ) = @_;
     my $caller = caller;
-    $caller->add_callback( init => $class->can('BUILD') );
+    $caller->add_callback( init => \&BUILD );
     $class->export_to_level( 1, @_ );
 }
 
@@ -29,6 +29,7 @@ sub BUILD {
 
 sub header {
     my $self = shift;
+    return $self->{+__PACKAGE__} = shift if @_;
     $self->{+__PACKAGE__} ||= CGI::Header->new( query => $self->query );
 }
 
@@ -68,12 +69,12 @@ sub header_props {
     my $header = $self->header;
     my $props  = $header->header;
 
-    carp "header_props called while header_type set to 'none'" if @_ and $self->header_type eq 'none';
+    if ( @_ ) {
+        carp "header_props called while header_type set to 'none'" if $self->header_type eq 'none';
+        $header->clear->set(@props); # replace
+    }
 
-    $header->clear if @_;
-    $header->set(@props) if @props;
-
-    map { ( "-$_" => $props->{$_} ) } keys %$props;
+    map { ( "-$_" => $props->{$_} ) } keys %$props; # 'type' -> '-type'
 }
 
 1;
@@ -122,6 +123,8 @@ of your application which inherits from L<CGI::Application>:
 =over 4
 
 =item $header = $cgiapp->header
+
+=item $header = $cgiapp->header( CGI::Header->new(...) )
 
 Returns a L<CGI::Header> object associated with C<$cgiapp>.
 You can use all methods of C<$header>.
