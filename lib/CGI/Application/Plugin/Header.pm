@@ -6,7 +6,7 @@ use parent 'Exporter';
 use CGI::Header;
 use Carp qw/carp croak/;
 
-our $VERSION = '0.63003';
+our $VERSION = '0.63004';
 our @EXPORT  = qw( header header_add header_props );
 
 sub import {
@@ -125,7 +125,6 @@ of your application which inherits from L<CGI::Application>:
 
 =item $header = $cgiapp->header
 
-=item $header = $cgiapp->header( CGI::Header->new(...) )
 
 Returns a L<CGI::Header> object associated with C<$cgiapp>.
 You can use all methods of C<$header>.
@@ -135,16 +134,12 @@ You can use all methods of C<$header>.
       $self->header->set( 'Content-Length' => length $$body_ref );
   }
 
+=item $header = $cgiapp->header( CGI::Header->new(...) )
+
 You can also define your C<header> class which inherits from C<CGI::Header>.
 For example,
 
-  use My::CGI::Header;
-  my $app = MyApp->new( header => My::CGI::Header->new );
-  $app->header->cookies({ name => 'ID', value => 123456 });
-
-where C<My::CGI::Header> is defined as follows:
-
-  package My::CGI::Header;
+  package MyApp::Header;
   use parent 'CGI::Header';
   use CGI::Cookie;
 
@@ -163,6 +158,21 @@ where C<My::CGI::Header> is defined as follows:
 
       $self;
   }
+
+You can set C<header> as follows:
+
+  # using new()
+
+  my $query  = CGI->new;
+  my $header = MyApp::Header->new( query => $query );
+  my $app    = MyApp->new( query => $query, header => $header );
+
+
+  # using header()
+
+  my $app = MyApp->new;
+
+  $app->header( MyApp::Header->new( query => $app->query ) );
 
 =back
 
@@ -221,6 +231,43 @@ The following plugins are compatible with this module:
 =over 4
 
 =item L<CGI::Application::Plugin::Redirect>
+
+=back
+
+The following plugins are roughly compatible with this module:
+
+=over 4
+
+=item L<CGI::Application::Plugin::Stream>
+
+"Setting a custom Content-Length/-Content-Length header" is not supported
+by this module. In other words, the C<stream_file> method always overwrites
+the C<Content-Length> header.
+
+=item L<CGI::Application::Plugin::Session>
+
+You need to overwrite the C<alias> table of C<CGI::Header>:
+
+  use parent 'CGI::Header';
+
+  sub _build_alias {
+      +{
+          'cookies'      => 'cookie',
+          'content-type' => 'type',
+      };
+  }
+
+  sub cookies {
+      my $self = shift;
+      return $self->header->{cookies} unless @_;
+      $self->header->{cookies} = shift;
+      $self;
+  }
+
+  sub cookie {
+      my $self = shift;
+      $self->cookies(@_);
+  }
 
 =back
 
