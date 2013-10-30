@@ -6,7 +6,7 @@ use parent 'Exporter';
 use CGI::Header;
 use Carp qw/carp croak/;
 
-our $VERSION = '0.63002';
+our $VERSION = '0.63003';
 our @EXPORT  = qw( header header_add header_props );
 
 sub import {
@@ -71,6 +71,7 @@ sub header_props {
 
     if ( @_ ) {
         carp "header_props called while header_type set to 'none'" if $self->header_type eq 'none';
+        croak "Odd number of elements passed to header_props" if @props % 2;
         $header->clear->set(@props); # replace
     }
 
@@ -171,17 +172,32 @@ This plugin overrides the following methods of L<CGI::Application>:
 
 =over 4
 
-=item $cgiapp->header_props
+=item %header_props = $cgiapp->header_props
 
-Behaves like L<CGI::Application>'s C<header_props> method.
+=item %header_props = $cgiapp->header_props( $k1 => $v1, $k2 => $v2, ... )
 
-=item $cgiapp->header_add
+=item %header_props = $cgiapp->header_props({ $k1 => $v1, $k2 => $v2, ... })
+
+=item %header_props = $cgiapp->header_props({})
+
+Behaves like L<CGI::Application>'s C<header_props> method,
+but the return format is modified. C<keys> of C<%header_props>
+are lowercased and start with a dash. The following aliases are used:
+
+  '-content-type' -> '-type'
+  '-cookie'       -> '-cookies'
+
+It's guaranteed that the keys are unique.
+
+=item $cgiapp->header_add( $k1 => $v1, $k2 => $v2, ... )
+
+=item $cgiapp->header_add({ $k1 => $v1, $k2 => $v2, ... })
 
 Behaves like L<CGI::Application>'s C<header_add> method.
 
 =back
 
-=head3 INCOMPATIBILITY
+=head2 COMPATIBILITY
 
 Header property names are normalized by C<$header> automatically,
 and so this plugin breaks your code which depends on the return value of
@@ -199,6 +215,14 @@ or C<header_add>:
   if ( $cgiapp->header->exists('-cookie') ) {
       ...
   }
+
+The following plugins are compatible with this module:
+
+=over 4
+
+=item L<CGI::Application::Plugin::Redirect>
+
+=back
 
 =head1 AUTHOR
 
