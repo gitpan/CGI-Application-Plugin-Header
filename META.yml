@@ -34,4 +34,4 @@ requires:
 resources:
   license: http://dev.perl.org/licenses/
   repository: https://github.com/anazawa/p5-CGI-Application-Plugin-Header
-version: 0.63006
+version: 0.63007
