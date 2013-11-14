@@ -5,7 +5,7 @@ author:
 build_requires:
   CGI::Application: 0
   CGI::Application::Plugin::Redirect: 1.00
-  CGI::Application::Plugin::Session: 1.03
+  CGI::Application::Plugin::Session: 1.04
   CGI::Application::Plugin::Stream: 2.10
   ExtUtils::MakeMaker: 6.59
   Test::More: 0
@@ -34,4 +34,4 @@ requires:
 resources:
   license: http://dev.perl.org/licenses/
   repository: https://github.com/anazawa/p5-CGI-Application-Plugin-Header
-version: 0.63007
+version: 0.63008
